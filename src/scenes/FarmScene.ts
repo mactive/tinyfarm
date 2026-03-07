@@ -3,18 +3,27 @@ import Phaser from 'phaser';
 export default class FarmScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasd!: {
+    up: Phaser.Input.Keyboard.Key;
+    down: Phaser.Input.Keyboard.Key;
+    left: Phaser.Input.Keyboard.Key;
+    right: Phaser.Input.Keyboard.Key;
+  };
 
   constructor() {
     super('FarmScene');
   }
 
   preload() {
+    // Load tilemap
+    this.load.tilemapTiledJSON('map', 'assets/map.json');
+
     // Load tilesets
     this.load.image('grass', 'assets/Tilesets/Grass.png');
     this.load.image('tilled', 'assets/Tilesets/Tilled Dirt.png');
     this.load.image('house', 'assets/Tilesets/Wooden House.png');
     this.load.image('fences', 'assets/Tilesets/Fences.png');
-    
+
     // Load character
     this.load.spritesheet('player', 'assets/Characters/Basic Charakter Spritesheet.png', {
       frameWidth: 48,
@@ -23,43 +32,44 @@ export default class FarmScene extends Phaser.Scene {
   }
 
   create() {
-    // Create map
-    const mapWidth = 20;
-    const mapHeight = 15;
-    const tileSize = 16; // Assuming 16x16 tiles based on standard pixel art packs
+    // Create map from Tiled JSON
+    const map = this.make.tilemap({ key: 'map' });
 
-    // Create a simple grass background
-    // Since we don't have a tilemap JSON, we'll just tile the grass image
-    // But 'Grass.png' is likely a tileset, not a single tile.
-    // Let's assume it's a tileset.
-    // For simplicity without a map editor, I'll create a blank tilemap.
-    
-    const map = this.make.tilemap({ width: mapWidth, height: mapHeight, tileWidth: tileSize, tileHeight: tileSize });
-    
-    // We need to know the structure of 'Grass.png'.
-    // Usually it has multiple tiles.
-    // I'll just add the tileset and fill with the first tile for now.
-    const tileset = map.addTilesetImage('grass', 'grass', tileSize, tileSize);
-    
-    if (tileset) {
-        const layer = map.createBlankLayer('Ground', tileset);
-        if (layer) {
-            layer.fill(0); // Fill with the first tile (index 0)
-            
-            // Randomly place some other grass variations if possible
-            // But without seeing the tileset, index 0 is safe.
-        }
+    // Add tilesets (first argument is the name in Tiled JSON, second is the key in Phaser)
+    const grassTileset = map.addTilesetImage('Grass', 'grass');
+    const fencesTileset = map.addTilesetImage('Fences', 'fences');
+    const houseTileset = map.addTilesetImage('House', 'house');
+
+    if (!grassTileset || !fencesTileset || !houseTileset) {
+      console.error('Failed to load tilesets');
+      return;
     }
 
-    // Add a house (just as an image for now if it's a single building)
-    // Wooden House.png might be a tileset or a single image.
-    // If it's a tileset, we need to map it.
-    // Let's just add it as an image to be safe and simple.
-    this.add.image(200, 150, 'house');
+    const tilesets = [grassTileset, fencesTileset, houseTileset];
 
-    // Add player
-    this.player = this.physics.add.sprite(400, 300, 'player');
+    // Create layers
+    map.createLayer('Ground', tilesets, 0, 0);
+    const fencesLayer = map.createLayer('Fences', tilesets, 0, 0);
+    map.createLayer('Objects', tilesets, 0, 0);
+
+    // Set collisions
+    if (fencesLayer) {
+      fencesLayer.setCollisionByExclusion([-1, 0]); // Collide with everything except empty tiles
+    }
+
+    // Set world bounds to match the map size
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+    // Add player at the center
+    const centerX = map.widthInPixels / 2;
+    const centerY = map.heightInPixels / 2;
+    this.player = this.physics.add.sprite(centerX, centerY, 'player');
     this.player.setCollideWorldBounds(true);
+
+    // Add collision between player and fences
+    if (fencesLayer) {
+      this.physics.add.collider(this.player, fencesLayer);
+    }
 
     // Create animations
     this.anims.create({
@@ -75,37 +85,49 @@ export default class FarmScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1
     });
-    
-    // Basic controls
+
+    // Controls
     if (this.input.keyboard) {
-        this.cursors = this.input.keyboard.createCursorKeys();
+      this.cursors = this.input.keyboard.createCursorKeys();
+      this.wasd = this.input.keyboard.addKeys({
+        up: Phaser.Input.Keyboard.KeyCodes.W,
+        down: Phaser.Input.Keyboard.KeyCodes.S,
+        left: Phaser.Input.Keyboard.KeyCodes.A,
+        right: Phaser.Input.Keyboard.KeyCodes.D
+      }) as any;
     }
 
     this.player.play('idle');
-    
+
     // Camera
     this.cameras.main.startFollow(this.player);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setZoom(2);
   }
 
   update() {
-    if (!this.cursors || !this.player || !this.player.body) return;
+    if (!this.cursors || !this.wasd || !this.player || !this.player.body) return;
 
     const speed = 100;
 
     this.player.setVelocity(0);
 
-    if (this.cursors.left.isDown) {
+    const left = this.cursors.left.isDown || this.wasd.left.isDown;
+    const right = this.cursors.right.isDown || this.wasd.right.isDown;
+    const up = this.cursors.up.isDown || this.wasd.up.isDown;
+    const down = this.cursors.down.isDown || this.wasd.down.isDown;
+
+    if (left) {
       this.player.setVelocityX(-speed);
       this.player.setFlipX(true);
-    } else if (this.cursors.right.isDown) {
+    } else if (right) {
       this.player.setVelocityX(speed);
       this.player.setFlipX(false);
     }
 
-    if (this.cursors.up.isDown) {
+    if (up) {
       this.player.setVelocityY(-speed);
-    } else if (this.cursors.down.isDown) {
+    } else if (down) {
       this.player.setVelocityY(speed);
     }
 
