@@ -23,6 +23,8 @@ export default class FarmScene extends Phaser.Scene {
     this.load.image('tilled', 'assets/Tilesets/Tilled Dirt.png');
     this.load.image('house', 'assets/Tilesets/Wooden House.png');
     this.load.image('fences', 'assets/Tilesets/Fences.png');
+    this.load.image('water', 'assets/Tilesets/Water.png');
+    this.load.image('grass_biom', 'assets/Objects/Basic_Grass_Biom_things.png');
 
     // Load character
     this.load.spritesheet('player', 'assets/Characters/Basic Charakter Spritesheet.png', {
@@ -39,22 +41,28 @@ export default class FarmScene extends Phaser.Scene {
     const grassTileset = map.addTilesetImage('Grass', 'grass');
     const fencesTileset = map.addTilesetImage('Fences', 'fences');
     const houseTileset = map.addTilesetImage('House', 'house');
+    const waterTileset = map.addTilesetImage('Water', 'water');
+    const grassBiomTileset = map.addTilesetImage('Basic_Grass_Biom_things', 'grass_biom');
 
-    if (!grassTileset || !fencesTileset || !houseTileset) {
+    if (!grassTileset || !fencesTileset || !houseTileset || !waterTileset || !grassBiomTileset) {
       console.error('Failed to load tilesets');
       return;
     }
 
-    const tilesets = [grassTileset, fencesTileset, houseTileset];
+    const tilesets = [grassTileset, fencesTileset, houseTileset, waterTileset, grassBiomTileset];
 
     // Create layers
     map.createLayer('Ground', tilesets, 0, 0);
+    map.createLayer('water', tilesets, 0, 0);
+    map.createLayer('tree', tilesets, 0, 0);
     const fencesLayer = map.createLayer('Fences', tilesets, 0, 0);
     map.createLayer('Objects', tilesets, 0, 0);
 
     // Set collisions
     if (fencesLayer) {
-      fencesLayer.setCollisionByExclusion([-1, 0]); // Collide with everything except empty tiles
+      // Set collision for fence tiles (IDs: 78, 79, 80, 81 from map.json)
+      // We want all fence tiles to be collidable
+      fencesLayer.setCollision([78, 79, 80, 81]);
     }
 
     // Set world bounds to match the map size
@@ -65,6 +73,13 @@ export default class FarmScene extends Phaser.Scene {
     const centerY = map.heightInPixels / 2;
     this.player = this.physics.add.sprite(centerX, centerY, 'player');
     this.player.setCollideWorldBounds(true);
+
+    // Adjust collision body size and offset to match the character's feet
+    // The sprite is 48x48.
+    // User reported previous offset was too low.
+    // Moving the collision box up to the "lower half" of the character visual area.
+    this.player.setSize(16, 8);
+    this.player.setOffset(16, 24);
 
     // Add collision between player and fences
     if (fencesLayer) {
