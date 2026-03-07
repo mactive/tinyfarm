@@ -16,7 +16,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: true,
       debugShowBody: true,
       debugShowStaticBody: true,
-      debugShowVelocity: true,
+      debugShowVelocity: false,
       debugVelocityColor: 0xffff00, // Yellow arrow for movement direction
       debugBodyColor: 0xffee00, // yellow box for collision area
       debugStaticBodyColor: 0x0000ff // Blue box for static objects

@@ -62,7 +62,7 @@ export default class FarmScene extends Phaser.Scene {
     if (fencesLayer) {
       // Set collision for fence tiles (IDs: 78, 79, 80, 81 from map.json)
       // We want all fence tiles to be collidable
-      fencesLayer.setCollision([78, 79, 80, 81]);
+      fencesLayer.setCollision([78, 79, 80, 81, 101, 102, 103, 108, 110, 115, 116, 117]);
     }
 
     // Set world bounds to match the map size
@@ -118,6 +118,13 @@ export default class FarmScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player);
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setZoom(2);
+
+    // Set debug velocity scale manually since it's not in the main config type
+    // This makes the velocity vector length proportional to speed. 
+    // Speed 100 * 0.16 = 16px length
+    if (this.physics.world && (this.physics.world as any).defaults) {
+      (this.physics.world as any).defaults.debugVelocityScale = 0.16;
+    }
   }
 
   update() {
