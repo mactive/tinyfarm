@@ -1,8 +1,42 @@
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-const mapWidth = 24;
-const mapHeight = 24;
+const args = process.argv.slice(2);
+const reverseIndex = args.indexOf('--reverse');
+
+if (reverseIndex !== -1 && args[reverseIndex + 1]) {
+  const imagePath = args[reverseIndex + 1];
+  reverseMap(imagePath);
+} else {
+  generateRandomMap();
+}
+
+function reverseMap(imagePath) {
+  const pythonScript = path.join(__dirname, 'reverse_map.py');
+  const outputJson = path.join(__dirname, '../public/assets/map.json');
+  
+  // Resolve absolute path for image
+  const absImagePath = path.isAbsolute(imagePath) ? imagePath : path.resolve(process.cwd(), imagePath);
+  
+  console.log(`Reverse engineering map from ${absImagePath}...`);
+  
+  try {
+    // Check if python3 is available
+    execSync('python3 --version', { stdio: 'ignore' });
+    
+    // Run python script
+    execSync(`python3 "${pythonScript}" "${absImagePath}" "${outputJson}"`, { stdio: 'inherit' });
+    console.log('Map reverse engineering completed.');
+  } catch (error) {
+    console.error('Error running reverse map script:', error.message);
+    process.exit(1);
+  }
+}
+
+function generateRandomMap() {
+  const mapWidth = 24;
+  const mapHeight = 24;
 const tileWidth = 16;
 const tileHeight = 16;
 
@@ -138,6 +172,32 @@ const map = {
       tilecount: 35,
       tileheight: 16,
       tilewidth: 16
+    },
+    {
+      columns: 4,
+      firstgid: 129,
+      image: "Tilesets/Water.png",
+      imageheight: 16,
+      imagewidth: 64,
+      margin: 0,
+      name: "Water",
+      spacing: 0,
+      tilecount: 4,
+      tileheight: 16,
+      tilewidth: 16
+    },
+    {
+      columns: 9,
+      firstgid: 133,
+      image: "Objects/Basic_Grass_Biom_things.png",
+      imageheight: 80,
+      imagewidth: 144,
+      margin: 0,
+      name: "Basic_Grass_Biom_things",
+      spacing: 0,
+      tilecount: 45,
+      tileheight: 16,
+      tilewidth: 16
     }
   ],
   tilewidth: tileWidth,
@@ -146,5 +206,6 @@ const map = {
   width: mapWidth
 };
 
-fs.writeFileSync(path.join(__dirname, '../public/assets/map.json'), JSON.stringify(map, null, 2));
-console.log('Map generated at public/assets/map.json');
+  fs.writeFileSync(path.join(__dirname, '../public/assets/map.json'), JSON.stringify(map, null, 2));
+  console.log('Map generated at public/assets/map.json');
+}

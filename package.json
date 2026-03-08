@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-map": "node scripts/generate_map.cjs"
   },
   "dependencies": {
     "phaser": "^3.80.0"
