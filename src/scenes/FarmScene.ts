@@ -17,7 +17,6 @@ export default class FarmScene extends Phaser.Scene {
   preload() {
     // Load tilemap
     this.load.tilemapTiledJSON('map', 'assets/map.json');
-    // this.load.tilemapTiledJSON('map', 'assets/map_1.json');
 
     // Load tilesets
     this.load.image('grass', 'assets/Tilesets/Grass.png');
@@ -26,6 +25,7 @@ export default class FarmScene extends Phaser.Scene {
     this.load.image('fences', 'assets/Tilesets/Fences.png');
     this.load.image('water', 'assets/Tilesets/Water.png');
     this.load.image('grass_biom', 'assets/Objects/Basic_Grass_Biom_things.png');
+    this.load.image('furniture', 'assets/Objects/Basic_Furniture.png');
 
     // Load character
     this.load.spritesheet('player', 'assets/Characters/Basic Charakter Spritesheet.png', {
@@ -44,22 +44,23 @@ export default class FarmScene extends Phaser.Scene {
     const houseTileset = map.addTilesetImage('House', 'house');
     const waterTileset = map.addTilesetImage('Water', 'water');
     const grassBiomTileset = map.addTilesetImage('Basic_Grass_Biom_things', 'grass_biom');
+    const furnitureTileset = map.addTilesetImage('Basic_Furniture', 'furniture');
 
-    if (!grassTileset || !fencesTileset || !houseTileset || !waterTileset || !grassBiomTileset) {
+    if (!grassTileset || !fencesTileset || !houseTileset || !waterTileset || !grassBiomTileset || !furnitureTileset) {
       console.error('Failed to load tilesets');
       return;
     }
 
-    const tilesets = [grassTileset, fencesTileset, houseTileset, waterTileset, grassBiomTileset];
+    const tilesets = [grassTileset, fencesTileset, houseTileset, waterTileset, grassBiomTileset, furnitureTileset];
 
     // Create layers
-    map.createLayer('Ground', tilesets, 0, 0);
     map.createLayer('water', tilesets, 0, 0);
+    map.createLayer('Ground', tilesets, 0, 0);
     map.createLayer('tree', tilesets, 0, 0);
     const fencesLayer = map.createLayer('Fences', tilesets, 0, 0);
     map.createLayer('Objects', tilesets, 0, 0);
 
-    // Set collisions
+    // Set collisions for fences layer
     if (fencesLayer) {
       // Set collision for fence tiles (IDs: 78, 79, 80, 81 from map.json)
       // We want all fence tiles to be collidable
